@@ -1,0 +1,17 @@
+{
+  "name": "hermes",
+  "version": "1.0.0",
+  "description": "Template and send emails from AMQP",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "amqplib": "^0.5.1",
+    "handlebars": "^4.0.10",
+    "mandrill-api": "^1.0.45",
+    "mjml": "^3.3.5"
+  }
+}
