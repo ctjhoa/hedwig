@@ -1,4 +1,4 @@
-# Hermes
+# Hedwig
 Simple email generator
 
 Basics steps:
