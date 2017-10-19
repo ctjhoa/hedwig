@@ -8,38 +8,34 @@ const config = require('./config.js');
 
 const mandrillClient = new mandrill.Mandrill(config.mandrill.API_KEY);
 
-async function buildTemplateMap() {
-  try {
-    const templateNames = fs.readdirSync('./templates');
-    let templateMap = {};
-    templateNames.forEach(async (fileName) => {
-      try {
-        const template = fs.readFileSync(`./templates/${fileName}`, 'utf8');
-        let mjmlOutput = mjml2html();
-        templateMap[fileName] =  Handlebars.precompile(mjmlOutput.html);
-      } catch (err) { console.error(err); }
-    });
-    return templateMap;
-  } catch (err) {
-    console.error(err);
-    return {};
-  }
+function buildTemplateMap() {
+  const templateNames = fs.readdirSync('./templates');
+  let templateSpecMap = {};
+  templateNames.forEach((fileName) => {
+    const template = fs.readFileSync(`./templates/${fileName}`, 'utf8');
+    let mjmlOutput = mjml2html(template);
+    templateSpecMap[fileName] =  mjmlOutput.html;
+  });
+  return templateSpecMap;
 }
 
-const templateMap = buildTemplateMap();
+const templateSpecMap = buildTemplateMap();
 
 amqplib.connect(config.amqp.url)
-  .then((conn) => conn.createChannel())
+  .then((conn) => {
+    process.once('SIGINT', conn.close.bind(conn));
+    return conn.createChannel();
+  })
   .then((ch) => {
-    return ch.assertQueue(config.amqp.queueName)
+    return ch.assertQueue(config.amqp.queueName, { durable: true, autoDelete: true })
       .then((ok) => {
         return ch.consume(config.amqp.queueName, (msg) => {
           if (msg !== null) {
             ch.ack(msg);
-            let email = JSON.parse(msg);
-            const generatedHtml = Handlebars.template(templateMap[email.templateName], {
-              toto: 'titi'
-            });
+            let email = JSON.parse(msg.content.toString('utf8'));
+            const template = Handlebars.compile(templateSpecMap[email.templateName]);
+            const generatedHtml = template(email.data);
+            console.log(generatedHtml);
           }
         });
       });

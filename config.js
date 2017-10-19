@@ -5,6 +5,6 @@ module.exports = {
   },
   amqp: {
     url: 'amqp://localhost',
-    queueName: 'emails'
+    queueName: 'hello'
   }
 }
